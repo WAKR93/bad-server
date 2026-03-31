@@ -3,6 +3,7 @@ import { FilterQuery } from 'mongoose'
 import NotFoundError from '../errors/not-found-error'
 import Order from '../models/order'
 import User, { IUser } from '../models/user'
+import { sanitizeInput } from '../utils/sanitizeInput'
 
 // TODO: Добавить guard admin
 // eslint-disable-next-line max-len
@@ -92,7 +93,7 @@ export const getCustomers = async (
         }
 
         if (search) {
-            const searchRegex = new RegExp(search as string, 'i')
+            const searchRegex = new RegExp(sanitizeInput(search as string), 'i')
             const orders = await Order.find(
                 {
                     $or: [{ deliveryAddress: searchRegex }],
@@ -110,14 +111,26 @@ export const getCustomers = async (
 
         const sort: { [key: string]: any } = {}
 
-        if (sortField && sortOrder) {
+        const allowedSort = [
+            'createdAt',
+            'totalAmount',
+            'status',
+            'orderNumber',
+        ]
+
+        if (sortField && sortOrder && allowedSort.includes(String(sortField))) {
             sort[sortField as string] = sortOrder === 'desc' ? -1 : 1
+        } else {
+            sort.createdAt = -1
         }
+
+        const pageNum = Math.max(Number(page) || 1, 1)
+        const limitNum = Math.min(Number(limit) || 10, 10)
 
         const options = {
             sort,
-            skip: (Number(page) - 1) * Number(limit),
-            limit: Number(limit),
+            skip: (Number(page) - 1) * limitNum,
+            limit: Number(limitNum),
         }
 
         const users = await User.find(filters, null, options).populate([
@@ -144,8 +157,8 @@ export const getCustomers = async (
             pagination: {
                 totalUsers,
                 totalPages,
-                currentPage: Number(page),
-                pageSize: Number(limit),
+                currentPage: pageNum,
+                pageSize: limitNum,
             },
         })
     } catch (error) {
@@ -178,10 +191,16 @@ export const updateCustomer = async (
     res: Response,
     next: NextFunction
 ) => {
+    const sanitizeBody = {
+        ...req.body,
+        name: req.body.name ? sanitizeInput(req.body.name) : undefined,
+        email: req.body.email,
+    }
+
     try {
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            sanitizeBody,
             {
                 new: true,
             }

@@ -9,6 +9,7 @@ import ConflictError from '../errors/conflict-error'
 import NotFoundError from '../errors/not-found-error'
 import UnauthorizedError from '../errors/unauthorized-error'
 import User from '../models/user'
+import { sanitizeInput } from '../utils/sanitizeInput'
 
 // POST /auth/login
 const login = async (req: Request, res: Response, next: NextFunction) => {
@@ -36,7 +37,8 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
 const register = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { email, password, name } = req.body
-        const newUser = new User({ email, password, name })
+        const newSafeName = sanitizeInput(name)
+        const newUser = new User({ email, password, newSafeName })
         await newUser.save()
         const accessToken = newUser.generateAccessToken()
         const refreshToken = await newUser.generateRefreshToken()
@@ -191,8 +193,15 @@ const updateCurrentUser = async (
     next: NextFunction
 ) => {
     const userId = res.locals.user._id
+    const safeReqBody = {
+        ...req.body,
+        name: req.body.name ? sanitizeInput(req.body.name) : undefined,
+        bio: req.body.bio ? sanitizeInput : undefined,
+        comment: req.body.comment ? sanitizeInput(req.body.comment) : undefined,
+    }
+
     try {
-        const updatedUser = await User.findByIdAndUpdate(userId, req.body, {
+        const updatedUser = await User.findByIdAndUpdate(userId, safeReqBody, {
             new: true,
         }).orFail(
             () =>

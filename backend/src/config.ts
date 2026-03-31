@@ -22,3 +22,8 @@ export const REFRESH_TOKEN = {
         } as CookieOptions,
     },
 }
+
+export const IS_RATE_LIMITED = Boolean(process.env.RATE_LIMITED) || false
+export const RATE_LIMIT_POINTS = Number(process.env.RATE_LIMIT_POINTS) || 3
+export const RATE_LIMIT_DURATION = Number(process.env.RATE_LIMIT_DURATION) || 1
+export const RATE_LIMIT_BLOCK = Number(process.env.RATE_LIMIT_BLOCK) || 30

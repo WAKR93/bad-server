@@ -8,7 +8,7 @@ export type OptionType = {
     value: string | number
 }
 
-export const REGEXP_IMAGE_NAME = /^.*[\\/\\]| \(\d+\)\.\w+$/g
+export const REGEXP_IMAGE_NAME = /^.*[\\/]| \(\d+\)\.\w+$/g
 
 export const CATEGORY_TYPES: OptionType[] = [
     {
@@ -49,11 +49,11 @@ export const FILTER_ORDER_MAP = {
 }
 
 export const CATEGORY_CLASSES = {
-    'софт-скил': styles.card__category_soft,
-    'хард-скил': styles.card__category_hard,
-    другое: styles.card__category_other,
-    дополнительное: styles.card__category_additional,
-    кнопка: styles.card__category_button,
+    ['софт-скил']: styles.card__category_soft,
+    ['хард-скил']: styles.card__category_hard,
+    ['другое']: styles.card__category_other,
+    ['дополнительное']: styles.card__category_additional,
+    ['кнопка']: styles.card__category_button,
 }
 
 export enum AppRoute {

@@ -1,3 +1,6 @@
+@use 'mixins';
+@use 'variables' as *;
+
 .profile {
     &__container {
         @include mixins.container(45px, 45px);
@@ -21,6 +24,7 @@
             @include mixins.button(white, $primaryLight, $primaryLight);
             border: $defaultBorder;
             margin-left: auto;
+
             &:hover {
                 border: $hoverBorder;
             }
@@ -29,6 +33,7 @@
         &_secondary {
             @include mixins.button(white, $primaryLight, $primaryLight);
             border: $defaultBorder;
+
             &:hover {
                 border: $hoverBorder;
             }
@@ -90,6 +95,7 @@
     &__searchLabel {
         flex-grow: 2;
     }
+
     &__searchInput {
         border-radius: $baseFontSize;
     }

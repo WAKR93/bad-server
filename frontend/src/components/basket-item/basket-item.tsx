@@ -1,7 +1,8 @@
 import clsx from 'clsx'
 import { ElementType } from 'react'
-import { IProduct } from '../../utils/types'
+import { IProduct } from '@types'
 import styles from './basket-item.module.scss'
+
 type BasketItemProps = {
     dataProduct: IProduct
     component: ElementType

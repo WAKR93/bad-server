@@ -1,5 +1,5 @@
 import { IOrder } from '@types'
-import { RequestStatus } from '../../../utils/weblarek-api'
+import { RequestStatus } from '@api'
 
 export type TOrderState = {
     info: IOrder

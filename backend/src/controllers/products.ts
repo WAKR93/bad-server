@@ -7,25 +7,27 @@ import ConflictError from '../errors/conflict-error'
 import NotFoundError from '../errors/not-found-error'
 import Product from '../models/product'
 import movingFile from '../utils/movingFile'
+import { getNormalizeLimit } from '../utils/normalizeLimit'
 
-// GET /product
 const getProducts = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { page = 1, limit = 5 } = req.query
         const options = {
-            skip: (Number(page) - 1) * Number(limit),
-            limit: Number(limit),
+            skip: (Number(page) - 1) * getNormalizeLimit(Number(limit)),
+            limit: getNormalizeLimit(Number(limit)),
         }
         const products = await Product.find({}, null, options)
         const totalProducts = await Product.countDocuments({})
-        const totalPages = Math.ceil(totalProducts / Number(limit))
+        const totalPages = Math.ceil(
+            totalProducts / getNormalizeLimit(Number(limit))
+        )
         return res.send({
             items: products,
             pagination: {
                 totalProducts,
                 totalPages,
                 currentPage: Number(page),
-                pageSize: Number(limit),
+                pageSize: getNormalizeLimit(Number(limit)),
             },
         })
     } catch (err) {
@@ -33,7 +35,6 @@ const getProducts = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
-// POST /product
 const createProduct = async (
     req: Request,
     res: Response,
@@ -42,7 +43,6 @@ const createProduct = async (
     try {
         const { description, category, price, title, image } = req.body
 
-        // Переносим картинку из временной папки
         if (image) {
             movingFile(
                 image.fileName,
@@ -72,8 +72,6 @@ const createProduct = async (
     }
 }
 
-// TODO: Добавить guard admin
-// PUT /product
 const updateProduct = async (
     req: Request,
     res: Response,
@@ -83,7 +81,6 @@ const updateProduct = async (
         const { productId } = req.params
         const { image } = req.body
 
-        // Переносим картинку из временной папки
         if (image) {
             movingFile(
                 image.fileName,
@@ -120,8 +117,6 @@ const updateProduct = async (
     }
 }
 
-// TODO: Добавить guard admin
-// DELETE /product
 const deleteProduct = async (
     req: Request,
     res: Response,

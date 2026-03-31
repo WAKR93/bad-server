@@ -4,15 +4,15 @@ import useFormWithValidation from '@components/form/hooks/useFormWithValidation'
 import { SyntheticEvent, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { useActionCreators } from '../../services/hooks'
-import { productsActions } from '../../services/slice/products'
+import { useActionCreators } from '@store/hooks.ts'
+import { productsActions } from '@slices/products'
 import {
     AppRoute,
     CATEGORY_CLASSES,
     CATEGORY_TYPES,
     OptionType,
-} from '../../utils/constants'
-import { IFile } from '../../utils/types'
+} from '@constants'
+import { IFile } from '@types'
 import FileInput from '../form/file-input'
 import Select from '../select'
 import styles from './admin.module.scss'
@@ -23,7 +23,11 @@ export default function AdminNewProduct() {
     const formRef = useRef<HTMLFormElement>(null)
     const { values, handleChange, errors, isValid } =
         useFormWithValidation<ProductFormValues>(
-            { title: '', description: '', price: null },
+            {
+                title: '',
+                description: '',
+                price: null,
+            },
             formRef.current
         )
     const { createProduct, uploadImageFile } =

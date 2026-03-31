@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import {
     CustomersDataFromServer,
     CustomersDataList,
-} from '../services/slice/customers/type'
+} from '@slices/customers/type.ts'
 
 export function adapterCustomersFromServer(
     customersData: CustomersDataFromServer[]

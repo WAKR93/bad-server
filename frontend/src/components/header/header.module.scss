@@ -1,3 +1,6 @@
+@use 'mixins';
+@use 'variables' as *;
+
 .header {
     height: $headerHeight;
     background-color: $primary;
@@ -13,6 +16,7 @@
     &__logo {
         height: $headerElementsSize;
         margin-right: 100px;
+
         &-image {
             display: block;
             height: 100%;
@@ -37,6 +41,7 @@
             width: 58px;
             display: block;
         }
+
         @include mixins.flex(column);
         gap: 8px;
         align-items: center;
@@ -50,7 +55,7 @@
 
     &__login {
         &::before {
-            background-image: url('/src/assets/login.svg');
+            background-image: url('../../assets/login.svg');
         }
     }
 
@@ -61,20 +66,21 @@
 
     &__logout {
         &::before {
-            background-image: url('/src/assets/logout.svg');
+            background-image: url('../../assets/logout.svg');
         }
     }
 
     &__profile {
         &::before {
-            background-image: url('/src/assets/person.svg');
+            background-image: url('../../assets/person.svg');
         }
     }
 
     &__basket {
         &::before {
-            background-image: url('/src/assets/shopping_cart.svg');
+            background-image: url('../../assets/shopping_cart.svg');
         }
+
         margin-left: auto;
         position: relative;
         cursor: pointer;

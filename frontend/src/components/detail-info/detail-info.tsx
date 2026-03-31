@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import React from 'react'
 import styles from './detail-info.module.scss'
+
 export interface DataItem {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any
@@ -21,6 +22,7 @@ interface DetailInfoProps {
     headers: Header[]
     actions: React.ComponentType[]
 }
+
 export default function DetailInfo({
     header,
     subheader,

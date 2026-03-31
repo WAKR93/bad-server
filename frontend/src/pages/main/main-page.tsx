@@ -1,27 +1,43 @@
-import { useEffect } from 'react'
-import { useSelector } from 'react-redux'
+import Pagination from '@components/pagination'
+import usePagination from '@components/pagination/helpers/usePagination'
+import { productsSelector } from '@slices/products'
+import { getProducts } from '@slices/products/thunk'
+import { IProduct, IProductPaginationResult } from '@types'
 import { Link } from 'react-router-dom'
 import Card from '../../components/card/card'
 import Gallery from '../../components/gallery/gallery'
-import { useActionCreators } from '../../services/hooks'
-import {
-    productsActions,
-    productsSelector,
-} from '../../services/slice/products'
 
 export default function MainPage() {
-    const { getProducts } = useActionCreators(productsActions)
-    useEffect(() => {
-        getProducts({ limit: 20 })
-    }, [])
-
-    const products = useSelector(productsSelector.selectProducts)
-
+    const {
+        data: products,
+        totalPages,
+        currentPage,
+        limit,
+        nextPage,
+        prevPage,
+    } = usePagination<IProductPaginationResult, IProduct>(
+        getProducts,
+        productsSelector.selectProducts,
+        10
+    )
     return (
-        <Gallery>
-            {products.map((product) => (
-                <Card key={product._id} dataCard={product} component={Link} />
-            ))}
-        </Gallery>
+        <>
+            <Gallery>
+                {products.map((product) => (
+                    <Card
+                        key={product._id}
+                        dataCard={product}
+                        component={Link}
+                    />
+                ))}
+            </Gallery>
+            <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                limit={limit}
+                onNextPage={nextPage}
+                onPrevPage={prevPage}
+            />
+        </>
     )
 }

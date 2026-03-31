@@ -1,3 +1,6 @@
+@use 'mixins';
+@use 'variables' as *;
+
 .basket {
     &__title {
         font-size: $titleFontSize;

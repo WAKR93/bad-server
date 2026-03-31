@@ -21,6 +21,7 @@ interface ButtonProps
     component?: ElementType
     extraClass?: string
 }
+
 export default function Button({
     children,
     onClick,

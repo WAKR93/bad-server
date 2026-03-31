@@ -3,6 +3,8 @@ import { FilterQuery } from 'mongoose'
 import NotFoundError from '../errors/not-found-error'
 import Order from '../models/order'
 import User, { IUser } from '../models/user'
+import escapeRegExp from '../utils/escapeRegExp'
+import { getNormalizeLimit } from '../utils/normalizeLimit'
 
 export const getCustomers = async (
     req: Request,
@@ -25,9 +27,6 @@ export const getCustomers = async (
             orderCountTo,
             search,
         } = req.query
-
-        const pageSize = Math.min(Number(limit), 10);
-        const currentPage = Number(page);
 
         const filters: FilterQuery<Partial<IUser>> = {}
 
@@ -92,9 +91,7 @@ export const getCustomers = async (
         }
 
         if (search) {
-            const escapedSearch = (search as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const searchRegex = new RegExp(escapedSearch, 'i')
-            
+            const searchRegex = new RegExp(escapeRegExp(search as string), 'i')
             const orders = await Order.find(
                 {
                     $or: [{ deliveryAddress: searchRegex }],
@@ -111,35 +108,45 @@ export const getCustomers = async (
         }
 
         const sort: { [key: string]: any } = {}
+
         if (sortField && sortOrder) {
             sort[sortField as string] = sortOrder === 'desc' ? -1 : 1
         }
 
-        const users = await User.find(filters)
-            .sort(sort)
-            .skip((currentPage - 1) * pageSize)
-            .limit(pageSize)
-            .populate([
-                'orders',
-                {
-                    path: 'lastOrder',
-                    populate: [
-                        { path: 'products' },
-                        { path: 'customer' }
-                    ],
+        const options = {
+            sort,
+            skip: (Number(page) - 1) * getNormalizeLimit(Number(limit)),
+            limit: Number(limit),
+        }
+
+        const users = await User.find(filters, null, options).populate([
+            'orders',
+            {
+                path: 'lastOrder',
+                populate: {
+                    path: 'products',
                 },
-            ])
+            },
+            {
+                path: 'lastOrder',
+                populate: {
+                    path: 'customer',
+                },
+            },
+        ])
 
         const totalUsers = await User.countDocuments(filters)
-        const totalPages = Math.ceil(totalUsers / pageSize)
+        const totalPages = Math.ceil(
+            totalUsers / getNormalizeLimit(Number(limit))
+        )
 
         res.status(200).json({
             customers: users,
             pagination: {
                 totalUsers,
                 totalPages,
-                currentPage,
-                pageSize,
+                currentPage: Number(page),
+                pageSize: Number(limit),
             },
         })
     } catch (error) {
@@ -157,7 +164,6 @@ export const getCustomerById = async (
             'orders',
             'lastOrder',
         ])
-        if (!user) throw new NotFoundError('Пользователь не найден')
         res.status(200).json(user)
     } catch (error) {
         next(error)
@@ -175,7 +181,6 @@ export const updateCustomer = async (
             req.body,
             {
                 new: true,
-                runValidators: true
             }
         )
             .orFail(

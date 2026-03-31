@@ -2,12 +2,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import Button from '@components/button'
 import { useEffect, useRef } from 'react'
-import { useActionCreators, useSelector } from '../../services/hooks'
-import {
-    orderFormActions,
-    orderFormSelector,
-} from '../../services/slice/orderForm'
-import { AppRoute } from '../../utils/constants'
+import { useActionCreators, useSelector } from '@store/hooks.ts'
+import { orderFormActions, orderFormSelector } from '@slices/orderForm'
+import { AppRoute } from '@constants'
 import Form, { Input } from '../form'
 import useFormWithValidation from '../form/hooks/useFormWithValidation'
 import { Radio } from '../form/radio'
@@ -35,7 +32,7 @@ export function OrderAddress() {
             address: orderPersistData.address,
             payment: PaymentType.Online,
         })
-    }, [orderPersistData])
+    }, [orderPersistData, setValuesForm])
 
     const nextStep = () => {
         setInfo(values)

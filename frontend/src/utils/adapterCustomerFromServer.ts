@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import { CustomersDataFromServer } from '../services/slice/customers/type'
+import { CustomersDataFromServer } from '@slices/customers/type.ts'
 
 export function adapterCustomerFromServer(
     customerInfo: CustomersDataFromServer

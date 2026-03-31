@@ -1,21 +1,17 @@
-import InputMask from '@mona-health/react-input-mask'
-import { SyntheticEvent, useEffect, useRef } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { AppRoute } from '../../utils/constants'
-import Button from '../button/button'
-import { Input } from '../form'
-import Form from '../form/form'
-import useFormWithValidation from '../form/hooks/useFormWithValidation'
-import { ContactsFormValues } from './helpers/types'
+import { AppRoute } from '@constants';
+import InputMask from '@mona-health/react-input-mask';
+import { SyntheticEvent, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Button from '../button/button';
+import { Input } from '../form';
+import Form from '../form/form';
+import useFormWithValidation from '../form/hooks/useFormWithValidation';
+import { ContactsFormValues } from './helpers/types';
 
-import { useActionCreators, useSelector } from '../../services/hooks'
-import { basketActions } from '../../services/slice/basket'
-import {
-    orderFormActions,
-    orderFormSelector,
-} from '../../services/slice/orderForm'
-import EditorInput from '../editor-text/editor-input'
-import styles from './order.module.scss'
+import { basketActions } from '@slices/basket';
+import { orderFormActions, orderFormSelector } from '@slices/orderForm';
+import { useActionCreators, useSelector } from '@store/hooks.ts';
+import styles from './order.module.scss';
 
 export function OrderContacts() {
     const location = useLocation()
@@ -38,11 +34,8 @@ export function OrderContacts() {
             email: orderPersistData.email,
             phone: orderPersistData.phone,
         })
-    }, [orderPersistData])
+    }, [orderPersistData, setValuesForm])
 
-    const handleEditInputChange = (value: string) => {
-        setValuesForm({ ...values, comment: value })
-    }
 
     const handleFormSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -94,9 +87,15 @@ export function OrderContacts() {
                 component={InputMask}
             />
 
-            <EditorInput
-                onChange={handleEditInputChange}
-                value={values.comment}
+            <Input
+                value={values.comment || ''}
+                onChange={handleChange}
+                name='comment'
+                type='text'
+                placeholder='Оставьте комментарий к заказу'
+                label='Комментарий'
+                error={errors.comment}
+                component={'textarea'}
             />
 
             <div className={styles.order__buttons}>

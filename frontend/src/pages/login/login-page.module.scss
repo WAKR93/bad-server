@@ -1,7 +1,11 @@
+@use 'mixins';
+@use 'variables' as *;
+
 .login {
     max-width: $maxPageWidth;
     margin: 0 auto;
 }
+
 .login__container {
     @include mixins.container(45px, 45px);
     max-width: $containerPageWidth;

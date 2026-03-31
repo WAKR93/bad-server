@@ -1,3 +1,6 @@
+@use 'mixins';
+@use 'variables' as *;
+
 .order {
     @include mixins.flex(column);
     gap: 4rem;
@@ -17,6 +20,7 @@
         &_alt {
             @include mixins.button(white, $primaryLight, $primaryLight);
             border: $defaultBorder;
+
             &:hover {
                 border: $hoverBorder;
             }
@@ -31,6 +35,7 @@
             @include mixins.button(white, $secondaryLight, $secondaryLight);
             opacity: 0.6;
             border: $defaultBorder;
+
             &:hover {
                 border: $hoverBorder;
                 opacity: 1;
@@ -57,6 +62,7 @@
         font-size: $titleFontSize;
         margin-bottom: 0;
     }
+
     &__close {
         margin-top: 2rem;
     }

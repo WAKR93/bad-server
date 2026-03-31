@@ -1,14 +1,15 @@
 import Button from '@components/button'
 import CardAdmin from '@components/card-admin'
+import { AppRoute } from '@constants'
 import { productsSelector } from '@slices/products'
+import { getProducts } from '@slices/products/thunk.ts'
+import { IProduct, IProductPaginationResult } from '@types'
 import clsx from 'clsx'
 import { Link, useLocation } from 'react-router-dom'
-import { getProducts } from '../../services/slice/products/thunk'
-import { AppRoute } from '../../utils/constants'
-import { IProduct, IProductPaginationResult } from '../../utils/types'
 import Pagination from '../pagination'
 import usePagination from '../pagination/helpers/usePagination'
 import styles from './admin.module.scss'
+
 export default function AdminProducts() {
     const location = useLocation()
     // const products = useSelector(productsSelector.selectProducts);
@@ -24,8 +25,6 @@ export default function AdminProducts() {
         productsSelector.selectProducts,
         5
     )
-    console.log(products)
-
     return (
         <main className={clsx(styles.admin__products, styles.admin__container)}>
             <div className={styles.admin__header}>

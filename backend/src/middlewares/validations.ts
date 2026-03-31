@@ -1,8 +1,7 @@
 import { Joi, celebrate } from 'celebrate'
 import { Types } from 'mongoose'
 
-// eslint-disable-next-line no-useless-escape
-export const phoneRegExp = /^\+?[\d\s\-()]{7,20}$/
+export const phoneRegExp = /^\+?[1-9]\d{1,14}$/
 
 export enum PaymentType {
     Card = 'card',
@@ -40,8 +39,6 @@ export const validateOrderBody = celebrate({
         }),
         address: Joi.string().required().messages({
             'string.empty': 'Не указан адрес',
-            'string.min': 'Минимальная длина поля телдефон - 7',
-            'string.max': 'Максимальная длина поля телдефон - 20',
         }),
         total: Joi.number().required().messages({
             'string.empty': 'Не указана сумма заказа',

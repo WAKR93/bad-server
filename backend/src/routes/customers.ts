@@ -8,7 +8,6 @@ import {
 import auth, { roleGuardMiddleware } from '../middlewares/auth'
 import { Role } from '../models/user'
 
-
 const customerRouter = Router()
 
 customerRouter.get('/', auth, roleGuardMiddleware(Role.Admin), getCustomers)

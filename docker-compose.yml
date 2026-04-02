@@ -25,7 +25,7 @@ services:
     build:
       context: backend
     env_file:
-      - backend/.env
+      - /.env
     volumes:
       - ./backend/src:/app/src
       - public:/app/src/public

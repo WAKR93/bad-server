@@ -1,15 +1,10 @@
-@use 'mixins';
-@use 'variables' as *;
-
 .basket {
     @include mixins.flex(column);
     gap: 2rem;
     height: 100%;
-
     &__title {
         font-size: $titleFontSize;
     }
-
     &__list {
         padding: 0;
         margin: 0;

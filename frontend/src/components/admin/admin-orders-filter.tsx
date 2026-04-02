@@ -1,13 +1,12 @@
 import { ordersActions, ordersSelector } from '@slices/orders'
 import { useActionCreators, useDispatch, useSelector } from '@store/hooks'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { fetchOrdersWithFilters } from '@slices/orders/thunk.ts'
-import { AppRoute } from '@constants'
-import Filter, { FiltersDict } from '../filter'
+import { fetchOrdersWithFilters } from '../../services/slice/orders/thunk'
+import { AppRoute } from '../../utils/constants'
+import { StatusType } from '../../utils/types'
+import Filter from '../filter'
 import styles from './admin.module.scss'
 import { ordersFilterFields } from './helpers/ordersFilterFields'
-import { StatusType } from '@types'
-import { isFieldOption } from '@components/filter/helpers/utils.ts'
 
 export default function AdminFilterOrders() {
     const navigate = useNavigate()
@@ -17,23 +16,27 @@ export default function AdminFilterOrders() {
     const { updateFilter, clearFilters } = useActionCreators(ordersActions)
     const filterOrderOption = useSelector(ordersSelector.selectFilterOption)
 
-    const handleFilter = (filters: FiltersDict) => {
-        dispatch(
-            updateFilter({
-                ...filters,
-                status: String(
-                    isFieldOption(filters.status)
-                        ? filters.status.value
-                        : filters.status
-                ) as StatusType,
-            })
-        )
+    const handleFilter = (filters: Record<string, unknown>) => {
+        const statusValue =
+            typeof filters.status === 'object' &&
+            filters.status !== null &&
+            'value' in filters.status
+                ? (filters.status as { value: unknown }).value
+                : filters.status
+
+        const normalizedStatus: StatusType | '' =
+            typeof statusValue === 'string' ? (statusValue as StatusType) : ''
+
+        dispatch(updateFilter({ ...filters, status: normalizedStatus }))
         const queryParams: { [key: string]: string } = {}
         Object.entries(filters).forEach(([key, value]) => {
             if (value) {
-                queryParams[key] = String(
-                    isFieldOption(value) ? value.value : value
-                )
+                const optionValue =
+                    typeof value === 'object' && value !== null && 'value' in value
+                        ? (value as { value: unknown }).value
+                        : value
+                queryParams[key] =
+                    String(optionValue)
             }
         })
         setSearchParams(queryParams)

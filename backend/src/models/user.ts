@@ -1,8 +1,9 @@
-import bcrypt from 'bcryptjs'
+/* eslint-disable no-param-reassign */
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 import mongoose, { Document, HydratedDocument, Model, Types } from 'mongoose'
 import validator from 'validator'
+import bcrypt from 'bcryptjs'
 
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '../config'
 import UnauthorizedError from '../errors/unauthorized-error'
@@ -48,15 +49,18 @@ const userSchema = new mongoose.Schema<IUser, IUserModel, IUserMethods>(
             minlength: [2, 'Минимальная длина поля "name" - 2'],
             maxlength: [30, 'Максимальная длина поля "name" - 30'],
         },
+        // в схеме пользователя есть обязательные email и password
         email: {
             type: String,
             required: [true, 'Поле "email" должно быть заполнено'],
-            unique: true,
+            unique: true, // поле email уникально (есть опция unique: true);
             validate: {
+                // для проверки email студенты используют validator
                 validator: (v: string) => validator.isEmail(v),
                 message: 'Поле "email" должно быть валидным email-адресом',
             },
         },
+        // поле password не имеет ограничения на длину, т.к. пароль хранится в виде хэша
         password: {
             type: String,
             required: [true, 'Поле "password" должно быть заполнено'],
@@ -98,27 +102,22 @@ const userSchema = new mongoose.Schema<IUser, IUserModel, IUserMethods>(
     {
         versionKey: false,
         timestamps: true,
+        // Возможно удаление пароля в контроллере создания, т.к. select: false не работает в случае создания сущности https://mongoosejs.com/docs/api/document.html#Document.prototype.toJSON()
         toJSON: {
             virtuals: true,
             transform: (_doc, ret) => {
-                const {
-                    tokens: _tokens,
-                    password: _password,
-                    _id,
-                    roles: _roles,
-                    ...rest
-                } = ret
+                const { tokens: _tokens, password: _password, _id, roles: _roles, ...rest } = ret
                 return rest
             },
         },
     }
 )
 
+// Возможно добавление хеша в контроллере регистрации
 userSchema.pre('save', async function hashingPassword(next) {
     try {
         if (this.isModified('password')) {
-            const salt = await bcrypt.genSalt(10)
-            this.password = await bcrypt.hash(this.password, salt)
+            this.password = await bcrypt.hash(this.password, 10)
         }
         next()
     } catch (error) {
@@ -126,8 +125,11 @@ userSchema.pre('save', async function hashingPassword(next) {
     }
 })
 
+// Можно лучше: централизованное создание accessToken и  refresh токена
+
 userSchema.methods.generateAccessToken = function generateAccessToken() {
     const user = this
+    // Создание accessToken токена возможно в контроллере авторизации
     return jwt.sign(
         {
             _id: user._id.toString(),
@@ -144,6 +146,7 @@ userSchema.methods.generateAccessToken = function generateAccessToken() {
 userSchema.methods.generateRefreshToken =
     async function generateRefreshToken() {
         const user = this
+        // Создание refresh токена возможно в контроллере авторизации/регистрации
         const refreshToken = jwt.sign(
             {
                 _id: user._id.toString(),
@@ -154,11 +157,14 @@ userSchema.methods.generateRefreshToken =
                 subject: user.id.toString(),
             }
         )
+
+        // Можно лучше: Создаем хеш refresh токена
         const rTknHash = crypto
             .createHmac('sha256', REFRESH_TOKEN.secret)
             .update(refreshToken)
             .digest('hex')
 
+        // Сохраняем refresh токена в базу данных, можно делать в контроллере авторизации/регистрации
         user.tokens.push({ token: rTknHash })
         await user.save()
 
@@ -172,18 +178,7 @@ userSchema.statics.findUserByCredentials = async function findByCredentials(
     const user = await this.findOne({ email })
         .select('+password')
         .orFail(() => new UnauthorizedError('Неправильные почта или пароль'))
-
-    let passwdMatch = false
-    if (user.password) {
-        passwdMatch = await bcrypt.compare(password, user.password)
-        if (!passwdMatch) {
-            const md5Password = crypto
-                .createHash('md5')
-                .update(password)
-                .digest('hex')
-            passwdMatch = md5Password === user.password
-        }
-    }
+    const passwdMatch = await bcrypt.compare(password, user.password)
     if (!passwdMatch) {
         return Promise.reject(
             new UnauthorizedError('Неправильные почта или пароль')

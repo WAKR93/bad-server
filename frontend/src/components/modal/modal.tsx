@@ -2,7 +2,6 @@ import clsx from 'clsx'
 import { ReactNode, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import styles from './modal.module.scss'
-
 type ModalProps = {
     children: ReactNode
     onClose: () => void

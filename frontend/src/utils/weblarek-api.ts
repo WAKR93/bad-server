@@ -31,8 +31,8 @@ export type ApiListResponse<Type> = {
 }
 
 class Api {
-    protected options: RequestInit
     private readonly baseUrl: string
+    protected options: RequestInit
 
     constructor(baseUrl: string, options: RequestInit = {}) {
         this.baseUrl = baseUrl
@@ -65,58 +65,39 @@ class Api {
         }
     }
 
+    private refreshToken = () => {
+        return this.request<UserResponseToken>('/auth/token', {
+            method: 'GET',
+            credentials: 'include',
+        })
+    }
+
     protected requestWithRefresh = async <T>(
         endpoint: string,
         options: RequestInit
-    ): Promise<T> => {
-        const accessToken = getCookie('accessToken')
-
-        const finalOptions: RequestInit = {
-            ...options,
-            headers: {
-                ...(options.headers || {}),
-                ...(accessToken
-                    ? { Authorization: `Bearer ${accessToken}` }
-                    : {}),
-            },
-            credentials: 'include',
-        }
-
+    ) => {
         try {
-            return await this.request<T>(endpoint, finalOptions)
-        } catch (error: any) {
-            if (error.statusCode === 401) {
-                try {
-                    const refreshData = await this.request<UserResponseToken>(
-                        '/auth/token',
-                        {
-                            method: 'GET',
-                            credentials: 'include',
-                        }
-                    )
-                    setCookie('accessToken', refreshData.accessToken)
-
-                    const retryOptions: RequestInit = {
-                        ...options,
-                        headers: {
-                            ...(options.headers || {}),
-                            Authorization: `Bearer ${refreshData.accessToken}`,
-                        },
-                        credentials: 'include',
-                    }
-                    return await this.request<T>(endpoint, retryOptions)
-                } catch (refreshError) {
-                    return Promise.reject(refreshError)
-                }
+            return await this.request<T>(endpoint, options)
+        } catch (error) {
+            const refreshData = await this.refreshToken()
+            if (!refreshData.success) {
+                return Promise.reject(refreshData)
             }
-            return Promise.reject(error)
+            setCookie('accessToken', refreshData.accessToken)
+            return await this.request<T>(endpoint, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    Authorization: `Bearer ${getCookie('accessToken')}`,
+                },
+            })
         }
     }
 }
 
 export interface IWebLarekAPI {
     getProductList: (
-        filters?: Record<string, unknown>
+        filters: Record<string, unknown>
     ) => Promise<IProductPaginationResult>
     getProductItem: (id: string) => Promise<IProduct>
     createOrder: (order: IOrder) => Promise<IOrderResult>
@@ -125,160 +106,254 @@ export interface IWebLarekAPI {
 export class WebLarekAPI extends Api implements IWebLarekAPI {
     readonly cdn: string
 
-    constructor(cdn: string, baseUrl: string) {
-        super(baseUrl)
+    constructor(cdn: string, baseUrl: string, options?: RequestInit) {
+        super(baseUrl, options)
         this.cdn = cdn
     }
 
-    private attachCDN = <T extends { image: { fileName: string } }>(
-        item: T
-    ) => ({
-        ...item,
-        image: { ...item.image, fileName: this.cdn + item.image.fileName },
-    })
-
-    getProductItem = (id: string) =>
-        this.request<IProduct>(`/products/${id}`, { method: 'GET' }).then(
-            this.attachCDN
+    getProductItem = (id: string): Promise<IProduct> => {
+        return this.request<IProduct>(`/product/${id}`, { method: 'GET' }).then(
+            (data: IProduct) => ({
+                ...data,
+                image: {
+                    ...data.image,
+                    fileName: this.cdn + data.image.fileName,
+                },
+            })
         )
+    }
 
-    getProductList = (filters: Record<string, unknown> = {}) => {
+    getProductList = (
+        filters: Record<string, unknown> = {}
+    ): Promise<IProductPaginationResult> => {
         const queryParams = new URLSearchParams(
             filters as Record<string, string>
         ).toString()
         return this.request<IProductPaginationResult>(
-            `/products?${queryParams}`,
-            { method: 'GET' }
+            `/product?${queryParams}`,
+            {
+                method: 'GET',
+            }
         ).then((data) => ({
             ...data,
-            items: data.items.map(this.attachCDN),
+            items: data.items.map((item) => ({
+                ...item,
+                image: {
+                    ...item.image,
+                    fileName: this.cdn + item.image.fileName,
+                },
+            })),
         }))
     }
 
-    createOrder = (order: IOrder) =>
-        this.requestWithRefresh<IOrderResult>('/orders', {
+    createOrder = (order: IOrder): Promise<IOrderResult> => {
+        return this.requestWithRefresh<IOrderResult>('/order', {
             method: 'POST',
             body: JSON.stringify(order),
-            headers: { 'Content-Type': 'application/json' },
-        })
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${getCookie('accessToken')}`,
+            },
+        }).then((data: IOrderResult) => data)
+    }
 
-    updateOrderStatus = (status: StatusType, orderNumber: string) =>
-        this.requestWithRefresh<IOrderResult>(`/orders/${orderNumber}`, {
+    updateOrderStatus = (
+        status: StatusType,
+        orderNumber: string
+    ): Promise<IOrderResult> => {
+        return this.requestWithRefresh<IOrderResult>(`/order/${orderNumber}`, {
             method: 'PATCH',
             body: JSON.stringify({ status }),
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${getCookie('accessToken')}`,
+            },
         })
+    }
 
-    getAllOrders = (filters: Record<string, unknown> = {}) => {
+    getAllOrders = (
+        filters: Record<string, unknown> = {}
+    ): Promise<IOrderPaginationResult> => {
         const queryParams = new URLSearchParams(
             filters as Record<string, string>
         ).toString()
         return this.requestWithRefresh<IOrderPaginationResult>(
-            `/orders/all?${queryParams}`,
-            { method: 'GET' }
+            `/order/all?${queryParams}`,
+            {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${getCookie('accessToken')}`,
+                },
+            }
         )
     }
 
-    getCurrentUserOrders = (filters: Record<string, unknown> = {}) => {
+    getCurrentUserOrders = (
+        filters: Record<string, unknown> = {}
+    ): Promise<IOrderPaginationResult> => {
         const queryParams = new URLSearchParams(
             filters as Record<string, string>
         ).toString()
         return this.requestWithRefresh<IOrderPaginationResult>(
-            `/orders/all/me?${queryParams}`,
-            { method: 'GET' }
+            `/order/all/me?${queryParams}`,
+            {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${getCookie('accessToken')}`,
+                },
+            }
         )
     }
 
-    getOrderByNumber = (orderNumber: string) =>
-        this.requestWithRefresh<IOrderResult>(`/orders/${orderNumber}`, {
+    getOrderByNumber = (orderNumber: string): Promise<IOrderResult> => {
+        return this.requestWithRefresh<IOrderResult>(`/order/${orderNumber}`, {
             method: 'GET',
+            headers: { Authorization: `Bearer ${getCookie('accessToken')}` },
         })
+    }
 
-    getOrderCurrentUserByNumber = (orderNumber: string) =>
-        this.requestWithRefresh<IOrderResult>(`/orders/me/${orderNumber}`, {
-            method: 'GET',
-        })
+    getOrderCurrentUserByNumber = (
+        orderNumber: string
+    ): Promise<IOrderResult> => {
+        return this.requestWithRefresh<IOrderResult>(
+            `/order/me/${orderNumber}`,
+            {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${getCookie('accessToken')}`,
+                },
+            }
+        )
+    }
 
-    getCsrfToken = () =>
-        this.request<{ csrfToken: string }>('/auth/csrf-token', {
-            method: 'GET',
-            credentials: 'include',
-        })
-
-    loginUser = async (data: UserLoginBodyDto) => {
-        const csrfResponse = await this.getCsrfToken()
-        const response = await this.request<UserResponseToken>('/auth/login', {
+    loginUser = (data: UserLoginBodyDto) => {
+        return this.request<UserResponseToken>('/auth/login', {
             method: 'POST',
             body: JSON.stringify(data),
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-Token': csrfResponse.csrfToken,
             },
             credentials: 'include',
         })
-        setCookie('accessToken', response.accessToken)
-        return response
     }
 
-    registerUser = (data: UserRegisterBodyDto) =>
-        this.request<UserResponseToken>('/auth/register', {
+    registerUser = (data: UserRegisterBodyDto) => {
+        return this.request<UserResponseToken>('/auth/register', {
             method: 'POST',
             body: JSON.stringify(data),
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+            },
             credentials: 'include',
         })
+    }
 
-    getUser = () =>
-        this.requestWithRefresh<UserResponse>('/auth/user', { method: 'GET' })
+    getUser = () => {
+        return this.requestWithRefresh<UserResponse>('/auth/user', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${getCookie('accessToken')}` },
+        })
+    }
 
-    getUserRoles = () =>
-        this.requestWithRefresh<string[]>('/auth/user/roles', { method: 'GET' })
+    getUserRoles = () => {
+        return this.requestWithRefresh<string[]>('/auth/user/roles', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${getCookie('accessToken')}` },
+        })
+    }
 
-    getAllCustomers = (filters: Record<string, unknown> = {}) => {
+    getAllCustomers = (
+        filters: Record<string, unknown> = {}
+    ): Promise<ICustomerPaginationResult> => {
         const queryParams = new URLSearchParams(
             filters as Record<string, string>
         ).toString()
         return this.requestWithRefresh<ICustomerPaginationResult>(
             `/customers?${queryParams}`,
-            { method: 'GET' }
+            {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${getCookie('accessToken')}`,
+                },
+            }
         )
     }
 
-    getCustomerById = (idCustomer: string) =>
-        this.requestWithRefresh<ICustomerResult>(`/customers/${idCustomer}`, {
-            method: 'GET',
-        })
+    getCustomerById = (idCustomer: string) => {
+        return this.requestWithRefresh<ICustomerResult>(
+            `/customers/${idCustomer}`,
+            {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${getCookie('accessToken')}`,
+                },
+            }
+        )
+    }
 
-    logoutUser = () =>
-        this.request<ServerResponse<unknown>>('/auth/logout', {
+    logoutUser = () => {
+        return this.request<ServerResponse<unknown>>('/auth/logout', {
             method: 'GET',
             credentials: 'include',
         })
+    }
 
-    createProduct = (data: Omit<IProduct, '_id'>) =>
-        this.requestWithRefresh<IProduct>('/products', {
+    createProduct = (data: Omit<IProduct, '_id'>) => {
+        console.log(data)
+        return this.requestWithRefresh<IProduct>('/product', {
             method: 'POST',
             body: JSON.stringify(data),
-            headers: { 'Content-Type': 'application/json' },
-        }).then(this.attachCDN)
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${getCookie('accessToken')}`,
+            },
+        }).then((data: IProduct) => ({
+            ...data,
+            image: {
+                ...data.image,
+                fileName: this.cdn + data.image.fileName,
+            },
+        }))
+    }
 
-    uploadFile = (data: FormData) =>
-        this.requestWithRefresh<IFile>('/upload', {
+    uploadFile = (data: FormData) => {
+        return this.requestWithRefresh<IFile>('/upload', {
             method: 'POST',
             body: data,
-        })
+            headers: {
+                Authorization: `Bearer ${getCookie('accessToken')}`,
+            },
+        }).then((data) => ({
+            ...data,
+            fileName: data.fileName,
+        }))
+    }
 
-    updateProduct = (data: Partial<Omit<IProduct, '_id'>>, id: string) =>
-        this.requestWithRefresh<IProduct>(`/products/${id}`, {
+    updateProduct = (data: Partial<Omit<IProduct, '_id'>>, id: string) => {
+        return this.requestWithRefresh<IProduct>(`/product/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(data),
-            headers: { 'Content-Type': 'application/json' },
-        }).then(this.attachCDN)
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${getCookie('accessToken')}`,
+            },
+        }).then((data: IProduct) => ({
+            ...data,
+            image: {
+                ...data.image,
+                fileName: this.cdn + data.image.fileName,
+            },
+        }))
+    }
 
-    deleteProduct = (id: string) =>
-        this.requestWithRefresh<IProduct>(`/products/${id}`, {
+    deleteProduct = (id: string) => {
+        return this.requestWithRefresh<IProduct>(`/product/${id}`, {
             method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${getCookie('accessToken')}`,
+            },
         })
+    }
 }
 
 export default new WebLarekAPI(CDN_URL, API_URL)

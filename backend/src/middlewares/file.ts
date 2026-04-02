@@ -1,7 +1,7 @@
 import { Request, Express } from 'express'
 import multer, { FileFilterCallback } from 'multer'
 import { mkdirSync } from 'fs'
-import { extname, join } from 'path'
+import { join } from 'path'
 import uniqueSlug from 'unique-slug'
 
 type DestinationCallback = (error: Error | null, destination: string) => void
@@ -30,10 +30,10 @@ const storage = multer.diskStorage({
         file: Express.Multer.File,
         cb: FileNameCallback
     ) => {
-        cb(
-            null,
-            `${uniqueSlug(new Date().toUTCString())}${extname(file.originalname)}`
-        )
+        const parts = file.originalname.split('.')
+        const ext = parts.length > 1 ? parts.pop() : undefined
+        const safeExt = ext && /^[a-z0-9]+$/i.test(ext) ? `.${ext.toLowerCase()}` : ''
+        cb(null, `${uniqueSlug()}${safeExt}`)
     },
 })
 
@@ -45,9 +45,6 @@ const types = [
     'image/svg+xml',
 ]
 
-const MIN_FILE_SIZE = 2 * 1024
-const MAX_FILE_SIZE = 10 * 1024 * 1024
-
 const fileFilter = (
     _req: Request,
     file: Express.Multer.File,
@@ -56,16 +53,16 @@ const fileFilter = (
     if (!types.includes(file.mimetype)) {
         return cb(null, false)
     }
-
-    if (file.size < MIN_FILE_SIZE) {
-        return cb(null, false)
-    }
-
     return cb(null, true)
 }
 
 export default multer({
     storage,
     fileFilter,
-    limits: { fileSize: MAX_FILE_SIZE },
+    limits: {
+        // Multer validates *max* sizes only; minimum size is checked in controller.
+        fileSize: 10 * 1024 * 1024,
+        files: 1,
+        fieldSize: 2 * 1024,
+    },
 })

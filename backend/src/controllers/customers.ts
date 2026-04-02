@@ -1,11 +1,12 @@
 import { NextFunction, Request, Response } from 'express'
 import { FilterQuery } from 'mongoose'
 import NotFoundError from '../errors/not-found-error'
-import Order from '../models/order'
 import User, { IUser } from '../models/user'
 import escapeRegExp from '../utils/escapeRegExp'
-import { getNormalizeLimit } from '../utils/normalizeLimit'
 
+// TODO: Добавить guard admin
+// eslint-disable-next-line max-len
+// Get GET /customers?page=2&limit=5&sort=totalAmount&order=desc&registrationDateFrom=2023-01-01&registrationDateTo=2023-12-31&lastOrderDateFrom=2023-01-01&lastOrderDateTo=2023-12-31&totalAmountFrom=100&totalAmountTo=1000&orderCountFrom=1&orderCountTo=10
 export const getCustomers = async (
     req: Request,
     res: Response,
@@ -27,6 +28,9 @@ export const getCustomers = async (
             orderCountTo,
             search,
         } = req.query
+
+        const normalizedLimit = Math.min(Math.max(Number(limit) || 10, 1), 10)
+        const normalizedPage = Math.max(Number(page) || 1, 1)
 
         const filters: FilterQuery<Partial<IUser>> = {}
 
@@ -92,18 +96,10 @@ export const getCustomers = async (
 
         if (search) {
             const searchRegex = new RegExp(escapeRegExp(search as string), 'i')
-            const orders = await Order.find(
-                {
-                    $or: [{ deliveryAddress: searchRegex }],
-                },
-                '_id'
-            )
-
-            const orderIds = orders.map((order) => order._id)
-
             filters.$or = [
                 { name: searchRegex },
-                { lastOrder: { $in: orderIds } },
+                { email: searchRegex },
+                { phone: searchRegex },
             ]
         }
 
@@ -115,38 +111,22 @@ export const getCustomers = async (
 
         const options = {
             sort,
-            skip: (Number(page) - 1) * getNormalizeLimit(Number(limit)),
-            limit: Number(limit),
+            skip: (normalizedPage - 1) * normalizedLimit,
+            limit: normalizedLimit,
         }
 
-        const users = await User.find(filters, null, options).populate([
-            'orders',
-            {
-                path: 'lastOrder',
-                populate: {
-                    path: 'products',
-                },
-            },
-            {
-                path: 'lastOrder',
-                populate: {
-                    path: 'customer',
-                },
-            },
-        ])
+        const users = await User.find(filters, null, options)
 
         const totalUsers = await User.countDocuments(filters)
-        const totalPages = Math.ceil(
-            totalUsers / getNormalizeLimit(Number(limit))
-        )
+        const totalPages = Math.ceil(totalUsers / normalizedLimit)
 
         res.status(200).json({
             customers: users,
             pagination: {
                 totalUsers,
                 totalPages,
-                currentPage: Number(page),
-                pageSize: Number(limit),
+                currentPage: normalizedPage,
+                pageSize: normalizedLimit,
             },
         })
     } catch (error) {
@@ -154,6 +134,8 @@ export const getCustomers = async (
     }
 }
 
+// TODO: Добавить guard admin
+// Get /customers/:id
 export const getCustomerById = async (
     req: Request,
     res: Response,
@@ -170,15 +152,27 @@ export const getCustomerById = async (
     }
 }
 
+// TODO: Добавить guard admin
+// Patch /customers/:id
 export const updateCustomer = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
     try {
+        const updateData: Partial<IUser> = {}
+
+        if (typeof req.body?.name === 'string') {
+            updateData.name = req.body.name
+        }
+
+        if (typeof req.body?.email === 'string') {
+            updateData.email = req.body.email
+        }
+
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            updateData,
             {
                 new: true,
             }
@@ -196,6 +190,8 @@ export const updateCustomer = async (
     }
 }
 
+// TODO: Добавить guard admin
+// Delete /customers/:id
 export const deleteCustomer = async (
     req: Request,
     res: Response,

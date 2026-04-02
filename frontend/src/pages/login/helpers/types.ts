@@ -1,3 +1,3 @@
-import { UserLoginBodyDto } from '@types'
+import { UserLoginBodyDto } from '../../../utils/types'
 
 export interface LoginFormValues extends UserLoginBodyDto {}

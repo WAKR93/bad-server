@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import rateLimit from 'express-rate-limit'
 import {
     getCsrfToken,
     getCurrentUser,
@@ -8,38 +9,33 @@ import {
     refreshAccessToken,
     register,
     updateCurrentUser,
+    verifyCsrf,
 } from '../controllers/auth'
 import auth from '../middlewares/auth'
-import {
-    validateAuthentication,
-    validateUserBody,
-} from '../middlewares/validations'
-import { routesConfig } from './routesConfig'
-import { csrfProtection } from '../middlewares/csrf'
 
 const authRouter = Router()
 
-authRouter.get(routesConfig.AuthUser.path, auth, getCurrentUser)
-authRouter.get('/auth/csrf-token', getCsrfToken)
-authRouter.patch(routesConfig.AuthMe.path, auth, updateCurrentUser)
-authRouter.get(routesConfig.AuthRoles.path, auth, getCurrentUserRoles)
-authRouter.post(
-    routesConfig.AuthLogin.path,
-    csrfProtection,
-    validateAuthentication,
-    login
-)
-authRouter.get(routesConfig.AuthToken.path, refreshAccessToken)
-authRouter.get(
-    routesConfig.AuthLogout.path,
-    csrfProtection,
-    logout
-)
-authRouter.post(
-    routesConfig.AuthRegister.path,
-    csrfProtection,
-    validateUserBody,
-    register
-)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 50,
+    standardHeaders: true,
+    legacyHeaders: false,
+})
+
+const authStrictLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+})
+
+authRouter.get('/user', auth, getCurrentUser)
+authRouter.patch('/me', auth, verifyCsrf, updateCurrentUser)
+authRouter.get('/user/roles', auth, getCurrentUserRoles)
+authRouter.get('/csrf-token', authLimiter, getCsrfToken)
+authRouter.post('/login', authStrictLimiter, login)
+authRouter.get('/token', authLimiter, verifyCsrf, refreshAccessToken)
+authRouter.get('/logout', verifyCsrf, logout)
+authRouter.post('/register', authStrictLimiter, register)
 
 export default authRouter

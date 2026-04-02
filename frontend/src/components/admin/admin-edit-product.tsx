@@ -5,15 +5,18 @@ import { SyntheticEvent, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { useActionCreators } from '@store/hooks.ts'
-import { productsActions, productsSelector } from '@slices/products'
+import { useActionCreators } from '../../services/hooks'
+import {
+    productsActions,
+    productsSelector,
+} from '../../services/slice/products'
 import {
     AppRoute,
     CATEGORY_CLASSES,
     CATEGORY_TYPES,
     OptionType,
-} from '@constants'
-import { IFile } from '@types'
+} from '../../utils/constants'
+import { IFile } from '../../utils/types'
 import FileInput from '../form/file-input'
 import Select from '../select'
 import styles from './admin.module.scss'
@@ -30,11 +33,7 @@ export default function AdminEditProduct() {
     const formRef = useRef<HTMLFormElement>(null)
     const { values, handleChange, errors, isValid, setValuesForm } =
         useFormWithValidation<ProductFormValues>(
-            {
-                title: '',
-                description: '',
-                price: null,
-            },
+            { title: '', description: '', price: null },
             formRef.current
         )
     const fileRef = useRef<HTMLInputElement | null>(null)
@@ -86,10 +85,7 @@ export default function AdminEditProduct() {
         }
 
         editId &&
-            updateProduct({
-                data: dataProduct,
-                id: editId,
-            })
+            updateProduct({ data: dataProduct, id: editId })
                 .unwrap()
                 .then(() => navigateAdminList())
                 .catch((error) => toast.error(error.message))

@@ -15,14 +15,6 @@ interface PaginationResult<_, U> {
     setLimit: (limit: number) => void
 }
 
-export interface PaginatedResponse {
-    payload: {
-        pagination: {
-            totalPages: number
-        }
-    }
-}
-
 const usePagination = <T, U>(
     asyncAction: AsyncThunk<T, Record<string, unknown>, object>,
     selector: (state: RootState) => U[],
@@ -40,22 +32,12 @@ const usePagination = <T, U>(
 
     const limit = Number(searchParams.get('limit')) || defaultLimit
 
-    const fetchData = useCallback(
-        async (params: Record<string, unknown>) => {
-            const response = (await dispatch(
-                asyncAction(params)
-            )) as PaginatedResponse
-            setTotalPages(response.payload?.pagination?.totalPages || 1)
-        },
-        [dispatch, asyncAction]
-    )
-
     const updateURL = useCallback(
         (newParams: Record<string, unknown>) => {
             const updatedParams = new URLSearchParams(searchParams)
             Object.entries(newParams).forEach(([key, value]) => {
                 if (value !== undefined) {
-                    updatedParams.set(key, String(value))
+                    updatedParams.set(key, String(value ?? ''))
                 } else {
                     updatedParams.delete(key)
                 }
@@ -64,6 +46,26 @@ const usePagination = <T, U>(
         },
         [searchParams, setSearchParams]
     )
+
+    const fetchData = useCallback(
+        async (params: Record<string, unknown>) => {
+            const response = (await dispatch(asyncAction(params))) as unknown
+            const payload = (response as { payload?: unknown }).payload
+            const pagination = (payload as { pagination?: unknown } | undefined)?.pagination
+            const total = (pagination as { totalPages?: unknown } | undefined)?.totalPages
+            setTotalPages(typeof total === 'number' ? total : 1)
+        },
+        [dispatch, asyncAction]
+    )
+
+    useEffect(() => {
+        const params = Object.fromEntries(searchParams.entries())
+        fetchData({ ...params, page: currentPage, limit }).then(() => {
+            if (data.length === 0 && currentPage > 1) {
+                updateURL({ page: 1, limit })
+            }
+        })
+    }, [currentPage, limit, searchParams, fetchData, data.length, updateURL])
 
     const nextPage = () => {
         if (currentPage < totalPages) {
@@ -77,26 +79,14 @@ const usePagination = <T, U>(
         }
     }
 
-    const setPage = useCallback(
-        (page: number) => {
-            const newPage = Math.max(1, Math.min(page, totalPages))
-            updateURL({ page: newPage, limit })
-        },
-        [limit, totalPages, updateURL]
-    )
+    const setPage = (page: number) => {
+        const newPage = Math.max(1, Math.min(page, totalPages))
+        updateURL({ page: newPage, limit })
+    }
 
     const setLimit = (newLimit: number) => {
         updateURL({ page: 1, limit: newLimit }) // При изменении лимита возвращаемся на первую страницу
     }
-
-    useEffect(() => {
-        const params = Object.fromEntries(searchParams.entries())
-        fetchData({ ...params, page: currentPage, limit }).then(() => {
-            if (data.length === 0 && currentPage > 1) {
-                setPage(1)
-            }
-        })
-    }, [currentPage, data.length, fetchData, limit, searchParams, setPage])
 
     return {
         data,

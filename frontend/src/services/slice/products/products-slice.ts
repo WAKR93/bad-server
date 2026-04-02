@@ -1,7 +1,7 @@
 import { RequestStatus } from '@api'
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { PayloadAction, createSlice } from '@reduxjs/toolkit'
 import { isActionPending, isActionRejected } from '../../../utils/redux'
-import { IProduct, IProductPaginationResult } from '@types'
+import { IProduct, IProductPaginationResult } from '../../../utils/types'
 import {
     createProduct,
     deleteProduct,

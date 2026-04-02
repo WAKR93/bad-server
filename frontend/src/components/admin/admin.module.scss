@@ -1,16 +1,11 @@
-@use 'mixins';
-@use 'variables' as *;
-
 .admin {
     &__container {
         @include mixins.container(45px, 45px);
     }
-
     &__products {
         @include mixins.flex(column);
         gap: 80px;
     }
-
     &__title {
         font-size: $titleFontSize;
         margin: 0;
@@ -29,7 +24,6 @@
             @include mixins.button(white, $primaryLight, $primaryLight);
             border: $defaultBorder;
             margin-left: auto;
-
             &:hover {
                 border: $hoverBorder;
             }
@@ -38,7 +32,6 @@
         &_secondary {
             @include mixins.button(white, $primaryLight, $primaryLight);
             border: $defaultBorder;
-
             &:hover {
                 border: $hoverBorder;
             }
@@ -52,12 +45,10 @@
     &__file {
         @include mixins.button(white, $primaryLight, $primaryLight);
         border: $defaultBorder;
-
         &:hover {
             border: $hoverBorder;
         }
     }
-
     &__listCount {
         font-size: $mainFontSize;
         color: $hover;
@@ -67,7 +58,6 @@
             margin-right: $baseFontSize;
         }
     }
-
     &__headerTitle {
         display: flex;
         align-items: baseline;
@@ -97,7 +87,6 @@
     &__searchLabel {
         flex-grow: 2;
     }
-
     &__searchInput {
         border-radius: $baseFontSize;
     }
@@ -111,7 +100,6 @@
         flex-direction: column;
         gap: 10px;
     }
-
     &__tableCellSubtitle {
         font-size: $baseFontSize;
         color: $hover;

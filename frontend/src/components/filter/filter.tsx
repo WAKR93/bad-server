@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { FiltersCustomers } from '../../services/slice/customers/type'
-import { FiltersOrder } from '../../services/slice/orders/type'
-import { FILTER_ORDER_TYPES, FilterType } from '../../utils/constants'
+import { FiltersCustomers } from '@slices/customers/type.ts'
+import { FiltersOrder } from '@slices/orders/type.ts'
+import { FILTER_ORDER_TYPES, FilterType } from '@constants'
 import Button from '../button/button'
 import Form, { Input } from '../form'
 import useFormWithValidation from '../form/hooks/useFormWithValidation'
@@ -15,9 +15,13 @@ interface Field {
     type?: FilterType
     options?: FieldOption[]
 }
+
 interface FilterSelectedState {
     [key: string]: FieldOption
 }
+
+export type FiltersDict = Record<string, FieldOption | string>
+
 interface FilterComponentProps {
     fields: Field[]
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -114,7 +118,7 @@ const Filter = ({
                 setSelects({ ...selects, status })
             }
         }
-    }, [defaultValue])
+    }, [defaultValue, selects])
 
     return (
         <Form

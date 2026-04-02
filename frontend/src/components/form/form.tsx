@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import {
+import React, {
     DetailedHTMLProps,
     FormHTMLAttributes,
     ReactNode,

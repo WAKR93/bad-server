@@ -1,5 +1,5 @@
 import { CATEGORY_CLASSES, FILTER_ORDER_MAP } from '@constants'
-import { PaymentType } from '../../components/order/helpers/types'
+import { PaymentType } from '@components/order/helpers/types.ts'
 
 export enum StatusType {
     Cancelled = 'cancelled',
@@ -60,6 +60,7 @@ export interface ICustomer extends IUser {
     roles: string[]
     totalAmount: number
 }
+
 export interface ICustomer extends IUser {
     surname: string
     deliveryAddress: string

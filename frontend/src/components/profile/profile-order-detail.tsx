@@ -1,13 +1,13 @@
 import Button from '@components/button'
 import DetailInfo from '@components/detail-info'
 import { OrderData } from '@slices/orders/type'
+import { getCurrentUserOrderByNumber } from '@slices/profile-orders/thunk.ts'
+import { useDispatch, useSelector } from '@store/hooks.ts'
+import { selectOrderByNumber } from '@store/selector'
 import clsx from 'clsx'
 import { format } from 'date-fns'
 import { useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useDispatch, useSelector } from '../../services/hooks'
-import { selectOrderByNumber } from '../../services/selector'
-import { getCurrentUserOrderByNumber } from '../../services/slice/profile-orders/thunk'
 import { adapterOrderFromServer } from '../../utils/adapterOrderFromServer'
 import { Preloader } from '../preloader'
 import styles from './profile.module.scss'
@@ -71,11 +71,7 @@ export default function ProfileOrderDetail() {
                 render: (dataInfo: OrderData) => (
                     <>
                         {dataInfo.comment ? (
-                            <div
-                                dangerouslySetInnerHTML={{
-                                    __html: dataInfo.comment,
-                                }}
-                            />
+                            <div>{dataInfo.comment}</div>
                         ) : (
                             'Комментариев нет'
                         )}

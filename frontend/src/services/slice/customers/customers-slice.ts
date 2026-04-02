@@ -1,11 +1,8 @@
-import { PayloadAction, createSlice } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { adapterCustomerFromServer } from '../../../utils/adapterCustomerFromServer'
 import { adapterCustomersFromServer } from '../../../utils/adapterCustomersFromServer'
-import {
-    ICustomerPaginationResult,
-    ICustomerResult,
-} from '../../../utils/types'
-import { RequestStatus } from '../../../utils/weblarek-api'
+import { ICustomerPaginationResult, ICustomerResult } from '@types'
+import { RequestStatus } from '@api'
 import {
     fetchCustomersWithFilters,
     getAllCustomers,

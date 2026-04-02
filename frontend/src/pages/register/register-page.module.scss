@@ -1,7 +1,11 @@
+@use 'mixins';
+@use 'variables' as *;
+
 .register {
     max-width: $maxPageWidth;
     margin: 0 auto;
 }
+
 .register__container {
     @include mixins.container(45px, 45px);
     max-width: $containerPageWidth;

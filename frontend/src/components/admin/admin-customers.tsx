@@ -8,11 +8,8 @@ import { useActionCreators, useDispatch, useSelector } from '@store/hooks'
 import clsx from 'clsx'
 import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import {
-    customersActions,
-    customersSelector,
-} from '../../services/slice/customers'
-import { fetchCustomersWithFilters } from '../../services/slice/customers/thunk'
+import { customersActions, customersSelector } from '@slices/customers'
+import { fetchCustomersWithFilters } from '@slices/customers/thunk.ts'
 import styles from './admin.module.scss'
 
 export default function AdminCustomers() {

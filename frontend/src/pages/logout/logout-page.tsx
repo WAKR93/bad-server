@@ -2,9 +2,10 @@ import Button from '@components/button/button'
 import Form from '@components/form'
 import { SyntheticEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useActionCreators } from '../../services/hooks'
-import { userActions } from '../../services/slice/user'
+import { useActionCreators } from '@store/hooks.ts'
+import { userActions } from '@slices/user'
 import styles from './logout-page.module.scss'
+
 export default function LogoutPage() {
     const { logoutUser, resetUser } = useActionCreators(userActions)
     const navigate = useNavigate()

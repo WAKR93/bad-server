@@ -1,3 +1,3 @@
-import { UserRegisterBodyDto } from '../../../utils/types'
+import { UserRegisterBodyDto } from '@types'
 
 export interface RegisterFormValues extends UserRegisterBodyDto {}

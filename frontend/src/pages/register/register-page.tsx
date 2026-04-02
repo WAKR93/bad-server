@@ -4,11 +4,12 @@ import useFormWithValidation from '@components/form/hooks/useFormWithValidation'
 import { SyntheticEvent, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { useActionCreators } from '../../services/hooks'
-import { userActions } from '../../services/slice/user'
-import { AppRoute } from '../../utils/constants'
+import { useActionCreators } from '@store/hooks.ts'
+import { userActions } from '@slices/user'
+import { AppRoute } from '@constants'
 import { RegisterFormValues } from './helpers/types'
 import styles from './register-page.module.scss'
+
 export default function RegisterPage() {
     const formRef = useRef<HTMLFormElement>(null)
     const { values, handleChange, errors, isValid } =

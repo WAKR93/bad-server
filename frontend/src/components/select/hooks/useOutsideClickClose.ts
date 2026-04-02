@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import React, { useEffect } from 'react'
 
 type UseOutsideClickClose = {
     isOpen: boolean
@@ -27,5 +27,5 @@ export const useOutsideClickClose = ({
         return () => {
             window.removeEventListener('mousedown', handleClick)
         }
-    }, [onClose, onChange, isOpen])
+    }, [onClose, onChange, isOpen, rootRef])
 }

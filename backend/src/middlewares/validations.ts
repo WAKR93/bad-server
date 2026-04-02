@@ -1,15 +1,13 @@
 import { Joi, celebrate } from 'celebrate'
 import { Types } from 'mongoose'
 
-// eslint-disable-next-line no-useless-escape
-export const phoneRegExp = /^\+?[\d\s\-()]{7,20}$/
+export const phoneRegExp = /^(\+\d{1,4})?([\d\s()-]+)$/
 
 export enum PaymentType {
     Card = 'card',
     Online = 'online',
 }
 
-// валидация id
 export const validateOrderBody = celebrate({
     body: Joi.object().keys({
         items: Joi.array()
@@ -40,8 +38,6 @@ export const validateOrderBody = celebrate({
         }),
         address: Joi.string().required().messages({
             'string.empty': 'Не указан адрес',
-            'string.min': 'Минимальная длина поля телдефон - 7',
-            'string.max': 'Максимальная длина поля телдефон - 20',
         }),
         total: Joi.number().required().messages({
             'string.empty': 'Не указана сумма заказа',
@@ -50,8 +46,6 @@ export const validateOrderBody = celebrate({
     }),
 })
 
-// валидация товара.
-// name и link - обязательные поля, name - от 2 до 30 символов, link - валидный url
 export const validateProductBody = celebrate({
     body: Joi.object().keys({
         title: Joi.string().required().min(2).max(30).messages({

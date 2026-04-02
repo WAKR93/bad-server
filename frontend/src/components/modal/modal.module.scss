@@ -1,3 +1,6 @@
+@use 'mixins';
+@use 'variables' as *;
+
 .modal {
     @include mixins.sublayer;
     height: max-content;
@@ -6,6 +9,7 @@
     z-index: 100;
     padding-top: 5vh;
     padding-bottom: 5vh;
+
     &_active {
         display: flex;
     }

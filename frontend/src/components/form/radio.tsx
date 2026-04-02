@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { DetailedHTMLProps, InputHTMLAttributes } from 'react'
+import React, { DetailedHTMLProps, InputHTMLAttributes } from 'react'
 import styles from './radio.module.scss'
 
 interface InputProps

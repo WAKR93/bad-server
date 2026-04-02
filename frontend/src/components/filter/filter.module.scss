@@ -1,3 +1,6 @@
+@use 'mixins';
+@use 'variables' as *;
+
 .filter {
     display: grid;
     grid-template-columns: min-content min-content;
@@ -29,10 +32,12 @@
 
     &__button {
         align-self: flex-start;
+
         &_alt {
             @include mixins.button(white, $primaryLight, $primaryLight);
             border: $defaultBorder;
             margin-left: auto;
+
             &:hover {
                 border: $hoverBorder;
             }

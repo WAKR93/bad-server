@@ -1,4 +1,4 @@
-import { IOrder, IOrderResult } from '../../../utils/types'
+import { IOrder, IOrderResult } from '@types'
 import { createAsyncThunk } from '../../hooks'
 
 export const createOrder = createAsyncThunk<IOrderResult, IOrder>(

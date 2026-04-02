@@ -12,7 +12,7 @@ import {
     useSelector as selectorHook,
 } from 'react-redux'
 
-import { WebLarekAPI } from '../utils/weblarek-api'
+import { WebLarekAPI } from '@api'
 import { AppDispatch, RootState } from './store'
 
 export const useDispatch = () => dispatchHook<AppDispatch>()
@@ -28,7 +28,10 @@ export const useActionCreators = <Actions extends ActionCreatorsMapObject>(
 ): BoundActions<Actions> => {
     const dispatch = useDispatch()
 
-    return useMemo(() => bindActionCreators(actions, dispatch), [])
+    return useMemo(
+        () => bindActionCreators(actions, dispatch),
+        [actions, dispatch]
+    )
 }
 
 export type BoundActions<Actions extends ActionCreatorsMapObject> = {

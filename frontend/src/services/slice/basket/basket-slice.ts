@@ -1,6 +1,6 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { IProduct } from '@types'
-import { IBasket } from '@types'
+import { PayloadAction, createSlice } from '@reduxjs/toolkit'
+import { IProduct } from '../../../utils/types'
+import { IBasket } from './../../../utils/types/index'
 
 const initialState: IBasket = {
     items: [],
@@ -25,7 +25,8 @@ export const basketSlice = createSlice({
         removeProductCart: (state, action: PayloadAction<string>) => {
             state.items = state.items.filter((item) => {
                 return item._id !== action.payload
-            })
+            });
+            state.totalCount = state.totalCount - 1;
         },
         resetBasket: () => initialState,
     },

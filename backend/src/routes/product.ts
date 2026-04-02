@@ -12,27 +12,26 @@ import {
     validateProductUpdateBody,
 } from '../middlewares/validations'
 import { Role } from '../models/user'
-import { routesConfig } from './routesConfig'
 
 const productRouter = Router()
 
-productRouter.get(routesConfig.Products.path, getProducts)
+productRouter.get('/', getProducts)
 productRouter.post(
-    routesConfig.Products.path,
+    '/',
     auth,
     roleGuardMiddleware(Role.Admin),
     validateProductBody,
     createProduct
 )
 productRouter.delete(
-    routesConfig.ProductById.path,
+    '/:productId',
     auth,
     roleGuardMiddleware(Role.Admin),
     validateObjId,
     deleteProduct
 )
 productRouter.patch(
-    routesConfig.ProductById.path,
+    '/:productId',
     auth,
     roleGuardMiddleware(Role.Admin),
     validateObjId,

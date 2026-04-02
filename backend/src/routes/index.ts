@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response, Router } from 'express'
 import NotFoundError from '../errors/not-found-error'
-import { csrfProtection } from '../middlewares/csrf'
+
 import auth from '../middlewares/auth'
 import authRouter from './auth'
 import customerRouter from './customers'
@@ -10,13 +10,11 @@ import uploadRouter from './upload'
 
 const router = Router()
 
-router.use(authRouter)
-
-router.use(productRouter)
-
-router.use(auth, csrfProtection, orderRouter)
-router.use(auth, csrfProtection, uploadRouter)
-router.use(auth, csrfProtection, customerRouter)
+router.use('/auth', authRouter)
+router.use('/product', productRouter)
+router.use('/order', auth, orderRouter)
+router.use('/upload', auth, uploadRouter)
+router.use('/customers', auth, customerRouter)
 
 router.use((_req: Request, _res: Response, next: NextFunction) => {
     next(new NotFoundError('Маршрут не найден'))

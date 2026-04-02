@@ -1,6 +1,3 @@
-@use 'mixins';
-@use 'variables' as *;
-
 .detailInfo {
     padding: 20px;
 
@@ -9,15 +6,12 @@
         grid-template-columns: repeat(auto-fit, minmax(40%, 1fr));
         gap: 20px;
     }
-
     &__title {
         font-size: $titleFontSize;
     }
-
     &__subtitle {
         font-size: $mainFontSize;
     }
-
     &__item {
         color: #fff;
         padding: 20px;

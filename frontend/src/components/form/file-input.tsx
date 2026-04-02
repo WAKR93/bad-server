@@ -1,7 +1,6 @@
 import clsx from 'clsx'
 import React, { DetailedHTMLProps, InputHTMLAttributes, useId } from 'react'
 import styles from './file-input.module.scss'
-
 interface FileInputProps
     extends DetailedHTMLProps<
         InputHTMLAttributes<HTMLInputElement>,

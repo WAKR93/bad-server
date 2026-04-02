@@ -11,41 +11,26 @@ import {
 import auth, { roleGuardMiddleware } from '../middlewares/auth'
 import { validateOrderBody } from '../middlewares/validations'
 import { Role } from '../models/user'
-import { routesConfig } from './routesConfig'
 
 const orderRouter = Router()
 
-orderRouter.post(routesConfig.Orders.path, auth, validateOrderBody, createOrder)
+orderRouter.post('/', auth, validateOrderBody, createOrder)
+orderRouter.get('/all', auth, roleGuardMiddleware(Role.Admin), getOrders)
+orderRouter.get('/all/me', auth, getOrdersCurrentUser)
 orderRouter.get(
-    routesConfig.OrdersAll.path,
-    auth,
-    roleGuardMiddleware(Role.Admin),
-    getOrders
-)
-orderRouter.get(routesConfig.OrdersAllMe.path, auth, getOrdersCurrentUser)
-orderRouter.get(
-    routesConfig.OrderByNumber.path,
+    '/:orderNumber',
     auth,
     roleGuardMiddleware(Role.Admin),
     getOrderByNumber
 )
-orderRouter.get(
-    routesConfig.OrderMeByNumber.path,
-    auth,
-    getOrderCurrentUserByNumber
-)
+orderRouter.get('/me/:orderNumber', auth, getOrderCurrentUserByNumber)
 orderRouter.patch(
-    routesConfig.OrderByNumber.path,
+    '/:orderNumber',
     auth,
     roleGuardMiddleware(Role.Admin),
     updateOrder
 )
 
-orderRouter.delete(
-    routesConfig.OrderById.path,
-    auth,
-    roleGuardMiddleware(Role.Admin),
-    deleteOrder
-)
+orderRouter.delete('/:id', auth, roleGuardMiddleware(Role.Admin), deleteOrder)
 
 export default orderRouter

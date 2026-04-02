@@ -7,32 +7,13 @@ import NotFoundError from '../errors/not-found-error'
 import UnauthorizedError from '../errors/unauthorized-error'
 import UserModel, { Role } from '../models/user'
 
+// есть файл middlewares/auth.js, в нём мидлвэр для проверки JWT;
+
 const auth = async (req: Request, res: Response, next: NextFunction) => {
-    const publicPaths = [
-        '/api/auth/csrf-token',
-        '/auth/csrf-token',
-        '/api/auth/login',
-        '/auth/login',
-        '/api/auth/register',
-        '/auth/register',
-        '/api/products',
-        '/products',
-        '/api/products/',
-        '/products/',
-    ]
-
-    const isPublicPath = publicPaths.some(
-        (path) => req.path.startsWith(path) || req.path === path
-    )
-
-    if (isPublicPath) {
-        return next()
-    }
-
     let payload: JwtPayload | null = null
     const authHeader = req.header('Authorization')
     if (!authHeader?.startsWith('Bearer ')) {
-        return next(new UnauthorizedError('Невалидный токен'))
+        throw new UnauthorizedError('Невалидный токен')
     }
     try {
         const accessTokenParts = authHeader.split(' ')
@@ -61,7 +42,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
 }
 
 export function roleGuardMiddleware(...roles: Role[]) {
-    return function (_req: Request, res: Response, next: NextFunction) {
+    return (_req: Request, res: Response, next: NextFunction) => {
         if (!res.locals.user) {
             return next(new UnauthorizedError('Необходима авторизация'))
         }
@@ -74,7 +55,7 @@ export function roleGuardMiddleware(...roles: Role[]) {
             return next(new ForbiddenError('Доступ запрещен'))
         }
 
-        next()
+        return next()
     }
 }
 
@@ -83,7 +64,7 @@ export function currentUserAccessMiddleware<T>(
     idProperty: string,
     userProperty: keyof T
 ) {
-    return async function (req: Request, res: Response, next: NextFunction) {
+    return async (req: Request, res: Response, next: NextFunction) => {
         const id = req.params[idProperty]
 
         if (!res.locals.user) {
@@ -109,7 +90,7 @@ export function currentUserAccessMiddleware<T>(
             return next(new ForbiddenError('Доступ запрещен'))
         }
 
-        next()
+        return next()
     }
 }
 

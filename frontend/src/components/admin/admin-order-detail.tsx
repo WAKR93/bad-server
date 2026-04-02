@@ -1,16 +1,16 @@
 import OpenInNewIcon from '@assets/open_in_new.svg?react'
 import Button from '@components/button'
 import DetailInfo from '@components/detail-info'
-import { ordersActions } from '@slices/orders'
-import { getOrderByNumber } from '@slices/orders/thunk.ts'
 import { OrderData } from '@slices/orders/type'
 import { useActionCreators, useDispatch, useSelector } from '@store/hooks'
-import { selectOrderByNumber } from '@store/selector'
 import { StatusType } from '@types'
 import clsx from 'clsx'
 import { format } from 'date-fns'
 import { useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { selectOrderByNumber } from '../../services/selector'
+import { ordersActions } from '../../services/slice/orders'
+import { getOrderByNumber } from '../../services/slice/orders/thunk'
 import { adapterOrderFromServer } from '../../utils/adapterOrderFromServer'
 import { Preloader } from '../preloader'
 import styles from './admin.module.scss'
@@ -101,7 +101,11 @@ export default function AdminOrderDetail() {
                 extraClass: styles.profile__gridRowFullWidth,
                 render: (dataInfo: OrderData) => (
                     <>
-                        <div>{dataInfo.comment}</div>
+                        <div
+                            dangerouslySetInnerHTML={{
+                                __html: dataInfo.comment,
+                            }}
+                        />
                     </>
                 ),
             },
@@ -120,7 +124,7 @@ export default function AdminOrderDetail() {
                 extraClass: styles.admin__gridRowFullWidth,
             },
         ],
-        [navigate, orderData]
+        [orderData]
     )
 
     if (!orderData) {

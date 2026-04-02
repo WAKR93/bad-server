@@ -1,6 +1,3 @@
-@use 'mixins';
-@use 'variables' as *;
-
 .gallery {
     @include mixins.container;
     @include mixins.grid(600px, 24px);

@@ -1,9 +1,5 @@
 import clsx from 'clsx'
-import React, {
-    DetailedHTMLProps,
-    ElementType,
-    InputHTMLAttributes,
-} from 'react'
+import { DetailedHTMLProps, ElementType, InputHTMLAttributes } from 'react'
 import styles from './input.module.scss'
 
 interface InputProps

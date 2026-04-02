@@ -1,12 +1,11 @@
 import { IOrderResult, StatusType } from '@types'
 import { adapterOrderFromServer } from '../../../utils/adapterOrderFromServer'
-import { RequestStatus } from '@api'
+import { RequestStatus } from '../../../utils/weblarek-api'
 
 export interface OrderValueType {
     title: string
     value: string | number
 }
-
 export interface OrderDataFromServer extends IOrderResult {}
 
 export interface OrderDataList {

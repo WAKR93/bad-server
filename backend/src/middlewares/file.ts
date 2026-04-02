@@ -2,7 +2,7 @@ import { Request, Express } from 'express'
 import multer, { FileFilterCallback } from 'multer'
 import { mkdirSync } from 'fs'
 import { extname, join } from 'path'
-import uniqueSlug from 'unique-slug'
+import slug from 'unique-slug'
 
 type DestinationCallback = (error: Error | null, destination: string) => void
 type FileNameCallback = (error: Error | null, filename: string) => void
@@ -30,10 +30,8 @@ const storage = multer.diskStorage({
         file: Express.Multer.File,
         cb: FileNameCallback
     ) => {
-        cb(
-            null,
-            `${uniqueSlug(new Date().toUTCString())}${extname(file.originalname)}`
-        )
+        const ext = extname(file.originalname) || '.png'
+        cb(null, `${slug()}-${Date.now()}${ext}`)
     },
 })
 
@@ -45,9 +43,6 @@ const types = [
     'image/svg+xml',
 ]
 
-const MIN_FILE_SIZE = 2 * 1024
-const MAX_FILE_SIZE = 10 * 1024 * 1024
-
 const fileFilter = (
     _req: Request,
     file: Express.Multer.File,
@@ -57,15 +52,7 @@ const fileFilter = (
         return cb(null, false)
     }
 
-    if (file.size < MIN_FILE_SIZE) {
-        return cb(null, false)
-    }
-
     return cb(null, true)
 }
 
-export default multer({
-    storage,
-    fileFilter,
-    limits: { fileSize: MAX_FILE_SIZE },
-})
+export default multer({ storage, fileFilter })

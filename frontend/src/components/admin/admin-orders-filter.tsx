@@ -1,13 +1,11 @@
 import { ordersActions, ordersSelector } from '@slices/orders'
 import { useActionCreators, useDispatch, useSelector } from '@store/hooks'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { fetchOrdersWithFilters } from '@slices/orders/thunk.ts'
-import { AppRoute } from '@constants'
-import Filter, { FiltersDict } from '../filter'
+import { fetchOrdersWithFilters } from '../../services/slice/orders/thunk'
+import { AppRoute } from '../../utils/constants'
+import Filter from '../filter'
 import styles from './admin.module.scss'
 import { ordersFilterFields } from './helpers/ordersFilterFields'
-import { StatusType } from '@types'
-import { isFieldOption } from '@components/filter/helpers/utils.ts'
 
 export default function AdminFilterOrders() {
     const navigate = useNavigate()
@@ -17,23 +15,13 @@ export default function AdminFilterOrders() {
     const { updateFilter, clearFilters } = useActionCreators(ordersActions)
     const filterOrderOption = useSelector(ordersSelector.selectFilterOption)
 
-    const handleFilter = (filters: FiltersDict) => {
-        dispatch(
-            updateFilter({
-                ...filters,
-                status: String(
-                    isFieldOption(filters.status)
-                        ? filters.status.value
-                        : filters.status
-                ) as StatusType,
-            })
-        )
+    const handleFilter = (filters: Record<string, any>) => {
+        dispatch(updateFilter({ ...filters, status: filters.status.value }))
         const queryParams: { [key: string]: string } = {}
         Object.entries(filters).forEach(([key, value]) => {
             if (value) {
-                queryParams[key] = String(
-                    isFieldOption(value) ? value.value : value
-                )
+                queryParams[key] =
+                    typeof value === 'object' ? value.value : value.toString()
             }
         })
         setSearchParams(queryParams)

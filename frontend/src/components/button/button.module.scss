@@ -1,6 +1,3 @@
-@use 'mixins';
-@use 'variables' as *;
-
 .button {
     @include mixins.button($primary, white, $hover);
     border: 0;

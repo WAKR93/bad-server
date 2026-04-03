@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 import mongoose, { Document, HydratedDocument, Model, Types } from 'mongoose'
 import validator from 'validator'
+import bcrypt from 'bcryptjs'
 import md5 from 'md5'
 
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '../config'
@@ -117,7 +118,8 @@ const userSchema = new mongoose.Schema<IUser, IUserModel, IUserMethods>(
 userSchema.pre('save', async function hashingPassword(next) {
     try {
         if (this.isModified('password')) {
-            this.password = md5(this.password)
+            const salt = await bcrypt.genSalt(10)
+            this.password = await bcrypt.hash(this.password, salt)
         }
         next()
     } catch (error) {
@@ -178,12 +180,32 @@ userSchema.statics.findUserByCredentials = async function findByCredentials(
     const user = await this.findOne({ email })
         .select('+password')
         .orFail(() => new UnauthorizedError('Неправильные почта или пароль'))
-    const passwdMatch = md5(password) === user.password
-    if (!passwdMatch) {
+
+    // Проверяем bcrypt-хэш
+    const isBcrypt = user.password.startsWith('$2')
+    if (isBcrypt) {
+        const passwdMatch = await bcrypt.compare(password, user.password)
+        if (!passwdMatch) {
+            return Promise.reject(
+                new UnauthorizedError('Неправильные почта или пароль')
+            )
+        }
+        return user
+    }
+
+    // Обратная совместимость: проверяем md5-хэш и перехэшируем в bcrypt
+    const md5Match = md5(password) === user.password
+    if (!md5Match) {
         return Promise.reject(
             new UnauthorizedError('Неправильные почта или пароль')
         )
     }
+
+    // Перехэшируем пароль в bcrypt
+    const salt = await bcrypt.genSalt(10)
+    user.password = await bcrypt.hash(password, salt)
+    await user.save()
+
     return user
 }
 

@@ -55,9 +55,17 @@ class Api {
 
     protected async request<T>(endpoint: string, options: RequestInit) {
         try {
+            const csrfToken = getCookie('_csrf')
+            const csrfHeaders: Record<string, string> = csrfToken
+                ? { 'x-csrf-token': csrfToken }
+                : {}
             const res = await fetch(`${this.baseUrl}${endpoint}`, {
                 ...this.options,
                 ...options,
+                headers: {
+                    ...csrfHeaders,
+                    ...(options.headers as Record<string, string>),
+                },
             })
             return await this.handleResponse<T>(res)
         } catch (error) {

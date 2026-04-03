@@ -100,9 +100,7 @@ export default function AdminOrderDetail() {
                 label: 'Комментарий к заказу',
                 extraClass: styles.profile__gridRowFullWidth,
                 render: (dataInfo: OrderData) => (
-                    <>
-                        <div>{dataInfo.comment}</div>
-                    </>
+                    <div>{dataInfo.comment}</div>
                 ),
             },
             {
@@ -120,7 +118,7 @@ export default function AdminOrderDetail() {
                 extraClass: styles.admin__gridRowFullWidth,
             },
         ],
-        [orderData, navigate]
+        [orderData]
     )
 
     if (!orderData) {

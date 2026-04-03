@@ -1,7 +1,7 @@
 import { Router } from 'express'
+import crypto from 'crypto'
 import rateLimit from 'express-rate-limit'
 import {
-    getCsrfToken,
     getCurrentUser,
     getCurrentUserRoles,
     login,
@@ -9,33 +9,35 @@ import {
     refreshAccessToken,
     register,
     updateCurrentUser,
-    verifyCsrf,
 } from '../controllers/auth'
 import auth from '../middlewares/auth'
-
-const authRouter = Router()
+import { CSRF_TOKEN } from '../config'
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 50,
+    max: 10,
     standardHeaders: true,
     legacyHeaders: false,
+    message: { message: 'Слишком много попыток, попробуйте позже' },
 })
 
-const authStrictLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 10,
-    standardHeaders: true,
-    legacyHeaders: false,
+const authRouter = Router()
+
+authRouter.get('/csrf-token', (req, res) => {
+    let token = req.cookies[CSRF_TOKEN.cookie.name]
+    if (!token) {
+        token = crypto.randomBytes(32).toString('hex')
+        res.cookie(CSRF_TOKEN.cookie.name, token, CSRF_TOKEN.cookie.options)
+    }
+    res.json({ csrfToken: token })
 })
 
 authRouter.get('/user', auth, getCurrentUser)
-authRouter.patch('/me', auth, verifyCsrf, updateCurrentUser)
+authRouter.patch('/me', auth, updateCurrentUser)
 authRouter.get('/user/roles', auth, getCurrentUserRoles)
-authRouter.get('/csrf-token', authLimiter, getCsrfToken)
-authRouter.post('/login', authStrictLimiter, login)
-authRouter.get('/token', authLimiter, verifyCsrf, refreshAccessToken)
-authRouter.get('/logout', verifyCsrf, logout)
-authRouter.post('/register', authStrictLimiter, register)
+authRouter.post('/login', authLimiter, login)
+authRouter.get('/token', refreshAccessToken)
+authRouter.get('/logout', logout)
+authRouter.post('/register', authLimiter, register)
 
 export default authRouter

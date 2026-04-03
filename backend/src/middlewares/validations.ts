@@ -1,16 +1,34 @@
-import { Joi, celebrate } from 'celebrate'
+import Joi from 'joi'
+import { Request, Response, NextFunction } from 'express'
 import { Types } from 'mongoose'
 
-// eslint-disable-next-line no-useless-escape
-export const phoneRegExp = /^\+?\d{10,15}$/
+export const phoneRegExp = /^\+?\d[\d\s\-()]{5,20}$/
 
 export enum PaymentType {
     Card = 'card',
     Online = 'online',
 }
 
-// валидация id
-export const validateOrderBody = celebrate({
+// Middleware-обёртка вместо celebrate
+function validate(schema: { body?: Joi.ObjectSchema; params?: Joi.ObjectSchema }) {
+    return (req: Request, res: Response, next: NextFunction) => {
+        if (schema.body) {
+            const { error } = schema.body.validate(req.body, { abortEarly: false })
+            if (error) {
+                return res.status(400).json({ message: error.details.map(d => d.message).join(', ') })
+            }
+        }
+        if (schema.params) {
+            const { error } = schema.params.validate(req.params, { abortEarly: false })
+            if (error) {
+                return res.status(400).json({ message: error.details.map(d => d.message).join(', ') })
+            }
+        }
+        return next()
+    }
+}
+
+export const validateOrderBody = validate({
     body: Joi.object().keys({
         items: Joi.array()
             .items(
@@ -48,9 +66,7 @@ export const validateOrderBody = celebrate({
     }),
 })
 
-// валидация товара.
-// name и link - обязательные поля, name - от 2 до 30 символов, link - валидный url
-export const validateProductBody = celebrate({
+export const validateProductBody = validate({
     body: Joi.object().keys({
         title: Joi.string().required().min(2).max(30).messages({
             'string.min': 'Минимальная длина поля "name" - 2',
@@ -71,7 +87,7 @@ export const validateProductBody = celebrate({
     }),
 })
 
-export const validateProductUpdateBody = celebrate({
+export const validateProductUpdateBody = validate({
     body: Joi.object().keys({
         title: Joi.string().min(2).max(30).messages({
             'string.min': 'Минимальная длина поля "name" - 2',
@@ -87,7 +103,7 @@ export const validateProductUpdateBody = celebrate({
     }),
 })
 
-export const validateObjId = celebrate({
+export const validateObjId = validate({
     params: Joi.object().keys({
         productId: Joi.string()
             .required()
@@ -100,7 +116,7 @@ export const validateObjId = celebrate({
     }),
 })
 
-export const validateUserBody = celebrate({
+export const validateUserBody = validate({
     body: Joi.object().keys({
         name: Joi.string().min(2).max(30).messages({
             'string.min': 'Минимальная длина поля "name" - 2',
@@ -119,7 +135,7 @@ export const validateUserBody = celebrate({
     }),
 })
 
-export const validateAuthentication = celebrate({
+export const validateAuthentication = validate({
     body: Joi.object().keys({
         email: Joi.string()
             .required()

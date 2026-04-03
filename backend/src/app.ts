@@ -1,11 +1,13 @@
-import { errors } from 'celebrate'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import 'dotenv/config'
 import express, { json, urlencoded } from 'express'
 import rateLimit from 'express-rate-limit'
+import helmet from 'helmet'
 import mongoose from 'mongoose'
-import { DB_ADDRESS } from './config'
+import path from 'path'
+import { DB_ADDRESS, ORIGIN_ALLOW } from './config'
+import { generateCsrfToken, validateCsrfToken } from './middlewares/csrf'
 import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
@@ -13,42 +15,31 @@ import routes from './routes'
 const { PORT = 3000 } = process.env
 const app = express()
 
-app.use(cookieParser())
+app.use(helmet())
 
-const apiLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    limit: 20,
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 300,
     standardHeaders: true,
     legacyHeaders: false,
+    message: { message: 'Слишком много запросов, попробуйте позже' },
 })
 
-app.use((req, res, next) => {
-    if (req.path.startsWith('/auth') || req.path.startsWith('/api/auth')) {
-        return next()
-    }
-    return apiLimiter(req, res, next)
-})
+app.use(globalLimiter)
 
-const allowedOrigins = (process.env.ORIGIN_ALLOW || 'http://localhost,http://localhost:5173')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
+app.use(cookieParser())
 
-app.use(
-    cors({
-        origin: allowedOrigins,
-        credentials: true,
-    })
-)
+app.use(cors({ origin: ORIGIN_ALLOW, credentials: true }))
 
-app.use(serveStatic(`${__dirname}/public`))
+app.use(serveStatic(path.join(__dirname, 'public')))
 
 app.use(urlencoded({ extended: true, limit: '1mb' }))
 app.use(json({ limit: '1mb' }))
 
-app.options('*', cors())
+app.options('*', cors({ origin: ORIGIN_ALLOW, credentials: true }))
+app.use(generateCsrfToken)
+app.use(validateCsrfToken)
 app.use(routes)
-app.use(errors())
 app.use(errorHandler)
 
 // eslint-disable-next-line no-console

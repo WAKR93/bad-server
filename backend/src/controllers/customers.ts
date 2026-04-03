@@ -1,8 +1,10 @@
 import { NextFunction, Request, Response } from 'express'
 import { FilterQuery } from 'mongoose'
 import NotFoundError from '../errors/not-found-error'
+import Order from '../models/order'
 import User, { IUser } from '../models/user'
 import escapeRegExp from '../utils/escapeRegExp'
+import { sanitizePagination } from '../utils/sanitizePagination'
 
 // TODO: Добавить guard admin
 // eslint-disable-next-line max-len
@@ -14,8 +16,8 @@ export const getCustomers = async (
 ) => {
     try {
         const {
-            page = 1,
-            limit = 10,
+            page: rawPage,
+            limit: rawLimit,
             sortField = 'createdAt',
             sortOrder = 'desc',
             registrationDateFrom,
@@ -29,8 +31,7 @@ export const getCustomers = async (
             search,
         } = req.query
 
-        const normalizedLimit = Math.min(Math.max(Number(limit) || 10, 1), 10)
-        const normalizedPage = Math.max(Number(page) || 1, 1)
+        const { page, limit, skip } = sanitizePagination(rawPage, rawLimit)
 
         const filters: FilterQuery<Partial<IUser>> = {}
 
@@ -96,37 +97,66 @@ export const getCustomers = async (
 
         if (search) {
             const searchRegex = new RegExp(escapeRegExp(search as string), 'i')
+            const orders = await Order.find(
+                {
+                    $or: [{ deliveryAddress: searchRegex }],
+                },
+                '_id'
+            )
+
+            const orderIds = orders.map((order) => order._id)
+
             filters.$or = [
                 { name: searchRegex },
-                { email: searchRegex },
-                { phone: searchRegex },
+                { lastOrder: { $in: orderIds } },
             ]
         }
 
+        const allowedSortFields = ['createdAt', 'totalAmount', 'orderCount', 'lastOrderDate', 'name']
         const sort: { [key: string]: any } = {}
 
-        if (sortField && sortOrder) {
-            sort[sortField as string] = sortOrder === 'desc' ? -1 : 1
+        if (
+            sortField &&
+            sortOrder &&
+            typeof sortField === 'string' &&
+            allowedSortFields.includes(sortField) &&
+            (sortOrder === 'desc' || sortOrder === 'asc')
+        ) {
+            sort[sortField] = sortOrder === 'desc' ? -1 : 1
         }
 
         const options = {
             sort,
-            skip: (normalizedPage - 1) * normalizedLimit,
-            limit: normalizedLimit,
+            skip,
+            limit,
         }
 
-        const users = await User.find(filters, null, options)
+        const users = await User.find(filters, null, options).populate([
+            'orders',
+            {
+                path: 'lastOrder',
+                populate: {
+                    path: 'products',
+                },
+            },
+            {
+                path: 'lastOrder',
+                populate: {
+                    path: 'customer',
+                },
+            },
+        ])
 
         const totalUsers = await User.countDocuments(filters)
-        const totalPages = Math.ceil(totalUsers / normalizedLimit)
+        const totalPages = Math.ceil(totalUsers / limit)
 
         res.status(200).json({
             customers: users,
             pagination: {
                 totalUsers,
                 totalPages,
-                currentPage: normalizedPage,
-                pageSize: normalizedLimit,
+                currentPage: page,
+                pageSize: limit,
             },
         })
     } catch (error) {
@@ -160,19 +190,14 @@ export const updateCustomer = async (
     next: NextFunction
 ) => {
     try {
-        const updateData: Partial<IUser> = {}
-
-        if (typeof req.body?.name === 'string') {
-            updateData.name = req.body.name
-        }
-
-        if (typeof req.body?.email === 'string') {
-            updateData.email = req.body.email
-        }
+        const { name, phone } = req.body
+        const allowedUpdates: Record<string, unknown> = {}
+        if (name !== undefined) allowedUpdates.name = name
+        if (phone !== undefined) allowedUpdates.phone = phone
 
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
-            updateData,
+            allowedUpdates,
             {
                 new: true,
             }

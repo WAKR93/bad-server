@@ -30,42 +30,6 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
     } catch (err) {
         return next(err)
     }
-
-}
-
-// GET /auth/csrf-token
-const getCsrfToken = async (_req: Request, res: Response, next: NextFunction) => {
-    try {
-        const token = crypto.randomBytes(32).toString('hex')
-
-        const isProduction = process.env.NODE_ENV === 'production'
-        const cookieSecure = (process.env.COOKIE_SECURE === 'true') || isProduction
-        const cookieSameSite = (process.env.COOKIE_SAMESITE || (cookieSecure ? 'none' : 'lax')) as 'lax' | 'strict' | 'none'
-
-        res.cookie('_csrf', token, {
-            httpOnly: false,
-            sameSite: cookieSameSite,
-            secure: cookieSecure,
-            path: '/',
-        })
-
-        return res.status(200).json({ csrfToken: token })
-    } catch (error) {
-        return next(error)
-    }
-}
-
-export const verifyCsrf = (req: Request, _res: Response, next: NextFunction) => {
-    const cookies = req.cookies as Record<string, string | undefined> | undefined
-    // eslint-disable-next-line dot-notation
-    const cookieToken = cookies ? cookies['_csrf'] : undefined
-    const headerToken = req.header('X-CSRF-Token') || req.header('x-csrf-token')
-
-    if (!cookieToken || !headerToken || cookieToken !== headerToken) {
-        return next(new UnauthorizedError('CSRF token invalid'))
-    }
-
-    return next()
 }
 
 // POST /auth/register
@@ -228,17 +192,12 @@ const updateCurrentUser = async (
 ) => {
     const userId = res.locals.user._id
     try {
-        const updateData: Record<string, unknown> = {}
+        const { name, phone } = req.body
+        const allowedUpdates: Record<string, unknown> = {}
+        if (name !== undefined) allowedUpdates.name = name
+        if (phone !== undefined) allowedUpdates.phone = phone
 
-        if (typeof req.body?.name === 'string') {
-            updateData.name = req.body.name
-        }
-
-        if (typeof req.body?.email === 'string') {
-            updateData.email = req.body.email
-        }
-
-        const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+        const updatedUser = await User.findByIdAndUpdate(userId, allowedUpdates, {
             new: true,
         }).orFail(
             () =>
@@ -253,7 +212,6 @@ const updateCurrentUser = async (
 }
 
 export {
-    getCsrfToken,
     getCurrentUser,
     getCurrentUserRoles,
     login,

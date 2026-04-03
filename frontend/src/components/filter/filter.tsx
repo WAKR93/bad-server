@@ -111,10 +111,10 @@ const Filter = ({
                 (item) => item.value === (defaultValue as FiltersOrder)?.status
             )
             if (status) {
-                setSelects((prev) => ({ ...prev, status }))
+                setSelects({ ...selects, status })
             }
         }
-    }, [defaultValue, selects])
+    }, [defaultValue])
 
     return (
         <Form
